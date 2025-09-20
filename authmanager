@@ -1,0 +1,69 @@
+// src/services/authManager.js
+class AuthManager {
+  constructor() {
+    this._authTokenKey = 'jwt_token';
+    this._currentUserKey = 'user_data';
+  }
+
+  // Save authentication token
+  async saveAuthToken(token) {
+    localStorage.setItem(this._authTokenKey, token);
+    return Promise.resolve();
+  }
+
+  // Get authentication token
+  async getAuthToken() {
+    const token = localStorage.getItem(this._authTokenKey);
+    return token;
+  }
+
+  // Clear authentication token
+  async clearAuthToken() {
+    localStorage.removeItem(this._authTokenKey);
+    return Promise.resolve();
+  }
+
+  // Save current user data
+  async saveCurrentUser(user) {
+    localStorage.setItem(this._currentUserKey, JSON.stringify(user));
+    return Promise.resolve();
+  }
+
+  // Get current user data
+  async getCurrentUser() {
+    const userJson = localStorage.getItem(this._currentUserKey);
+    if (userJson) {
+      return JSON.parse(userJson);
+    }
+    return null;
+  }
+
+  // Clear current user data
+  async clearCurrentUser() {
+    localStorage.removeItem(this._currentUserKey);
+    return Promise.resolve();
+  }
+
+  // Save both token and user data
+  async saveUserSession(token, user) {
+    await this.saveAuthToken(token);
+    await this.saveCurrentUser(user);
+  }
+
+  // Clear both token and user data
+  async logout() {
+    await this.clearAuthToken();
+    await this.clearCurrentUser();
+  }
+
+  // Check if user is authenticated
+  async isLoggedIn() {
+    const token = await this.getAuthToken();
+    const user = await this.getCurrentUser();
+    return token !== null && user !== null;
+  }
+}
+
+// Create singleton instance
+const authManager = new AuthManager();
+export default authManager;
