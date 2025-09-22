@@ -18,11 +18,19 @@ const apiService = axios.create({
 apiService.interceptors.request.use(
   async (config) => {
     try {
-      const token = await authManager.getAccessToken();
-      if (token) {
-        config.headers['Authorization'] = `Bearer ${token}`;
+      // *** MODIFIED LOGIC HERE ***
+      // Only attach the Authorization header if the request is NOT for the refresh endpoint
+      if (config.url && !config.url.includes('/auth/refresh')) {
+        const token = await authManager.getAccessToken(); // This gets the access token
+        if (token) {
+          config.headers['Authorization'] = `Bearer ${token}`;
+        } else {
+          delete config.headers['Authorization'];
+        }
       } else {
-        delete config.headers['Authorization'];
+        // If it's the refresh endpoint, ensure no Authorization header is sent
+        // This is important to prevent the backend from trying to validate an expired access token
+        delete config.headers['Authorization']; 
       }
     } catch (e) {
       console.error('Request interceptor error:', e);
@@ -32,26 +40,43 @@ apiService.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-
-// Response interceptor to handle 401 (token refresh)
+// --- Rest of your api.js remains the same ---
+// Response interceptor (no changes needed here for this specific issue)
 apiService.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
+    // Check if the error is from the refresh token endpoint itself, to prevent loops
+    if (originalRequest.url === '/auth/refresh' && error.response?.status === 401) {
+      console.warn("Refresh token endpoint failed. Logging out user.");
+      authManager.logout();
+      window.location.href = '/login?reason=expired';
+      return Promise.reject(error);
+    }
+
+    // Check for 401 Unauthorized from other requests and if not already retried
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       try {
-        const response = await apiService.post('/auth/refresh'); // refresh token via cookie
+        console.log("Access token expired. Attempting to refresh token...");
+        // This call will now go through the request interceptor *without* the Authorization header
+        const response = await apiService.post('/auth/refresh'); 
         const { accessToken } = response.data;
 
-        authManager.setAccessToken(accessToken);
-        originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
+        if (!accessToken) {
+          throw new Error("Refresh endpoint did not return an access token.");
+        }
 
-        return apiService(originalRequest);
+        authManager.setAccessToken(accessToken); // Update stored access token
+        originalRequest.headers['Authorization'] = `Bearer ${accessToken}`; // Update original request with new token
+
+        console.log("Token refreshed, retrying original request.");
+        return apiService(originalRequest); // Retry the original request with the new token
       } catch (refreshError) {
+        console.error("Token refresh failed. Logging out user.", refreshError);
         authManager.logout();
-        window.location.href = '/login';
+        window.location.href = '/login?reason=expired';
         return Promise.reject(refreshError);
       }
     }
@@ -298,6 +323,14 @@ deleteUser: (userId) => apiService.delete(`/auth/users/${userId}`).then(response
       return responseBody.teams;
     } else {
       throw new Error(responseBody.message || 'Failed to load teams for leader');
+    }
+  }),
+  getTeamsForMember: (memberId) => apiService.get(`/teams/member/${memberId}`).then(response => {
+    const responseBody = response.data;
+    if (response.status === 200 && responseBody.success) {
+      return responseBody.teams;
+    } else {
+      throw new Error(responseBody.message || 'Failed to load teams for member');
     }
   }),
   

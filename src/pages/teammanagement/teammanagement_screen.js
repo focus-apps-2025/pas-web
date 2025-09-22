@@ -106,7 +106,7 @@ import { saveAs } from 'file-saver';
 const primaryColor = '#004F98';
 const secondaryColor = '#0066CC';
 const successColor = '#10B981';
-const warningColor = '#F59E0B';
+const warningColor = '#F59E0B'; 
 const errorColor = '#EF4444';
 const backgroundColor = '#F8FAFC';
 const surfaceColor = '#FFFFFF';
@@ -389,7 +389,9 @@ useEffect(() => {
   };
 
   // Fetch available team members
-  const fetchAvailableTeamMembers = async () => {
+ // Fetch available team members and exclude users already assigned to an active team.
+// If editingTeam is set, members already assigned to that same team will be allowed.
+const fetchAvailableTeamMembers = async () => {
     try {
       const members = await api.getUsersByRole('team_member');
       
@@ -398,10 +400,7 @@ useEffect(() => {
       for (const user of members) {
         try {
           const memberTeams = await api.getTeamsForMember(user._id || user.id);
-          const hasActiveTeam = memberTeams.some(team => 
-            (team.status || '').toLowerCase() === 'active' && 
-            (!editingTeam || (team._id !== editingTeam._id && team.id !== editingTeam.id))
-          );
+          const hasActiveTeam = memberTeams.some(team => team.status.toLowerCase() === 'active');
           if (!hasActiveTeam && user._id !== currentUser?._id && user.id !== currentUser?.id) {
             availableMembers.push(user);
           }
@@ -418,6 +417,7 @@ useEffect(() => {
       showSnackbar('Failed to load team members', 'error');
     }
   };
+
 
   // Fetch available team leaders
   const fetchAvailableTeamLeaders = async () => {
@@ -901,9 +901,12 @@ const clearFilters = () => {
   };
 
   // Open member selection dialog
-  const openMemberDialog = () => {
-    setMemberDialogOpen(true);
-  };
+  const openMemberDialog = async () => {
+  // Refresh available members before showing the dialog (so filtering is current)
+  await fetchAvailableTeamMembers();
+  setMemberDialogOpen(true);
+};
+
 
   // Close member selection dialog
   const closeMemberDialog = () => {

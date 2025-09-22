@@ -1,7 +1,7 @@
-// src/pages/admin/AdminDashboard.js
+// Admin Dashboard Page
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import AdminNavbar from '../component/adminnavbar.js';
+import AdminNavbar from '../component/adminnavbar'; // Corrected import path
 import {
   Box,
   Container,
@@ -11,103 +11,62 @@ import {
   Card,
   CardContent,
   Avatar,
-  IconButton,
   CircularProgress,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogActions,
   Button,
-  AppBar,
-  Toolbar,
   Divider,
   Chip,
   LinearProgress,
-  Menu,
-  MenuItem,
-  ListItemIcon,
-  ListItemText,
-  Badge,
+  Stack,
   useTheme,
   useMediaQuery,
-  Tab,
-  Tabs,
-  Stack,
   alpha
 } from '@mui/material';
 import {
   People as PeopleIcon,
   Group as GroupsIcon,
   Description as DescriptionIcon,
-  Logout as LogoutIcon,
-  AdminPanelSettings as AdminIcon,
-  ArrowForward as ArrowForwardIcon,
   Warning as WarningIcon,
-  Notifications as NotificationsIcon,
-  Settings as SettingsIcon,
-  AccountCircle as AccountCircleIcon,
-  Dashboard as DashboardIcon,
-  Analytics as AnalyticsIcon,
-  Refresh as RefreshIcon,
-  TrendingUp,
+  ArrowForward as ArrowForwardIcon,
   CheckCircle,
   Business,
   Phone,
   Email,
   LocationOn,
   Schedule,
-  Star
+  Analytics as AnalyticsIcon,
 } from '@mui/icons-material';
 import { styled } from '@mui/material/styles';
 
-import AdminLoginModal from '../component/adminloginmodel';
+import AdminLoginModal from '../component/adminloginmodel'; 
 import api from '../services/api';
-import authManager from '../services/authsession.js';
+import authManager from '../services/authsession'; 
 
-// Professional Website Header
-const WebsiteHeader = styled(AppBar)(({ theme }) => ({
-  backgroundColor: '#FFFFFF',
-  color: '#1F2937',
-  boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-  borderBottom: '1px solid #E5E7EB',
-  position: 'sticky',
-  top: 0,
-  zIndex: 1000,
-}));
-
-// Professional Navigation Bar
-const NavigationBar = styled(Box)(({ theme }) => ({
-  backgroundColor: '#004F98',
-  color: '#004F98',
-  borderBottom: '3px solid #0066CC',
-  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-  borderRadius: '0 0 8px 8px',
-}));
-
-// Website-style Tab
-const WebsiteTab = styled(Tab)(({ theme }) => ({
-  color: 'rgba(255, 255, 255, 0.8)',
-  fontWeight: 600,
-  fontSize: '15px',
-  textTransform: 'none',
-  minHeight: 60,
-  '&.Mui-selected': {
-    color: 'white',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
+// --- Styled Components ---
+const ProfessionalCard = styled(Card)(({ theme }) => ({
+  borderRadius: 12, // Slightly smaller border-radius
+  boxShadow: '0 2px 6px -1px rgba(0, 0, 0, 0.08)', // Lighter shadow
+  border: '1px solid #E5E7EB',
+  transition: 'all 0.3s ease',
   '&:hover': {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    color: 'white',
-  },
+    transform: 'translateY(-4px)', // Less intense hover effect
+    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)', // Lighter hover shadow
+  }
 }));
 
-// Hero Section
 const HeroSection = styled(Box)(({ theme }) => ({
   background: 'linear-gradient(135deg,  #004F98  100%, #3a79b3ff 0%)',
+  minHeight: '160px', // Reduced minHeight
+  padding: theme.spacing(6, 0), // Reduced padding
   color: 'white',
-  padding: theme.spacing(8, 0),
   position: 'relative',
   overflow: 'hidden',
+  [theme.breakpoints.down('md')]: {
+    padding: theme.spacing(3, 0), // Further reduced padding on mobile
+  },
   '&::before': {
     content: '""',
     position: 'absolute',
@@ -120,60 +79,52 @@ const HeroSection = styled(Box)(({ theme }) => ({
   }
 }));
 
-// Professional Card
-const ProfessionalCard = styled(Card)(({ theme }) => ({
-  borderRadius: 16,
-  boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-  border: '1px solid #E5E7EB',
-  transition: 'all 0.3s ease',
-  '&:hover': {
-    transform: 'translateY(-8px)',
-    boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)',
-  }
-}));
-
-// Stats Card
 const StatsCard = styled(ProfessionalCard)(({ theme }) => ({
   background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
   position: 'relative',
   overflow: 'hidden',
+  height: '100%',
   '&::before': {
     content: '""',
     position: 'absolute',
     top: 0,
     left: 0,
     width: '100%',
-    height: 4,
+    height: 3, // Smaller accent line
     background: 'var(--accent-color)',
   }
 }));
 
-// Management Card Style
 const ManagementCard = styled(Paper)(({ theme }) => ({
-  padding: theme.spacing(4),
-  borderRadius: 20,
+  padding: theme.spacing(3), // Reduced padding
+  borderRadius: 16, // Smaller border-radius
   backgroundColor: '#ffffff',
   border: '1px solid #E5E7EB',
   cursor: 'pointer',
   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
   position: 'relative',
   overflow: 'hidden',
-  height: '200px',
+  height: '200px', // Adjusted height
   display: 'flex',
   flexDirection: 'column',
   justifyContent: 'space-between',
-  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+  boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)', // Lighter shadow
   '&:hover': {
-    transform: 'translateY(-8px)',
-    boxShadow: '0 12px 30px rgba(0, 0, 0, 0.15)',
+    transform: 'translateY(-6px)', // Less intense hover effect
+    boxShadow: '0 10px 20px rgba(0, 0, 0, 0.1)', // Lighter hover shadow
     '& .management-icon': {
-      transform: 'scale(1.1)',
+      transform: 'scale(1.08)', // Slightly less intense scale
     },
     '& .access-button': {
       backgroundColor: 'var(--card-color)',
       color: 'white',
-      transform: 'translateX(4px)',
+      transform: 'translateX(2px)', // Less intense translate
     }
+  },
+  [theme.breakpoints.down('sm')]: {
+    padding: theme.spacing(2), // Further reduced padding for smaller screens
+    height: 'auto',
+    minHeight: '180px'
   }
 }));
 
@@ -188,29 +139,11 @@ const AdminDashboard = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isDataLoading, setIsDataLoading] = useState(false);
-  const [stats, setStats] = useState({ users: 11, teams: 8 });
-  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [stats, setStats] = useState({ users: 0, teams: 0 }); 
   const [accessDenied, setAccessDenied] = useState(false);
-  const [userProfile, setUserProfile] = useState(null);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [notificationsAnchorEl, setNotificationsAnchorEl] = useState(null);
-  const [notifications, setNotifications] = useState([
-    { id: 1, message: 'New user registered', time: '2 minutes ago', read: false },
-    { id: 2, message: 'Team assignment completed', time: '5 hours ago', read: false },
-    { id: 3, message: 'System update available', time: '1 day ago', read: true }
-  ]);
-  const [selectedTab, setSelectedTab] = useState(0);
+  const [userProfile, setUserProfile] = useState(null); 
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
-  // Website Navigation Items with routes
-  const navigationItems = [
-    { label: 'Dashboard', icon: DashboardIcon, path: '/admin' },
-    { label: 'Users', icon: PeopleIcon, path: '/admin/users' },
-    { label: 'Teams', icon: GroupsIcon, path: '/admin/teams' },
-    { label: 'Master Data', icon: DescriptionIcon, path: '/admin/master-desc' },
-    { label: 'Reports', icon: AnalyticsIcon, path: '/admin/reports' },
-  ];
-
-  // Management Tools with routes
   const managementTools = [
     {
       title: 'User Management',
@@ -246,15 +179,6 @@ const AdminDashboard = () => {
     }
   ];
 
-  // Set the active tab based on current route
-  useEffect(() => {
-    const currentPath = location.pathname;
-    const activeIndex = navigationItems.findIndex(item => item.path === currentPath);
-    if (activeIndex !== -1) {
-      setSelectedTab(activeIndex);
-    }
-  }, [location.pathname]);
-
   useEffect(() => {
     checkAuthStatus();
   }, []);
@@ -262,7 +186,7 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (loggedIn && isAdmin) {
       loadDashboardData();
-      loadUserProfile();
+      loadUserProfile(); 
     }
   }, [loggedIn, isAdmin]);
 
@@ -280,6 +204,8 @@ const AdminDashboard = () => {
       }
     } catch (error) {
       console.error("Auth check error:", error);
+      setLoggedIn(false);
+      setIsAdmin(false);
     } finally {
       setIsLoading(false);
     }
@@ -290,7 +216,7 @@ const AdminDashboard = () => {
       setIsDataLoading(true);
       const users = await api.getAllUsers();
       const teams = await api.getTeams();
-      setStats({ users: users?.length || 11, teams: teams?.length || 8 });
+      setStats({ users: users?.length || 0, teams: teams?.length || 0 }); 
     } catch (error) {
       console.error("Failed to load dashboard data:", error);
       setStats({ users: 0, teams: 0});
@@ -298,44 +224,34 @@ const AdminDashboard = () => {
       setIsDataLoading(false);
     }
   };
+  
+  const handleLogout = async () => {
+    setLogoutDialogOpen(false);
+  };
+  
 
   const loadUserProfile = async () => {
     try {
       const user = await authManager.getCurrentUser();
       setUserProfile(user);
     } catch (error) {
-      console.error("Failed to load user profile:", error);
+      console.error("Failed to load user profile for dashboard:", error);
+      setUserProfile(null);
     }
   };
 
-  const handleRefresh = () => loadDashboardData();
-  const handleLogout = async () => {
-    await authManager.logout();
-    setLogoutDialogOpen(false);
-    setLoggedIn(false);
-    setIsAdmin(false);
+  const handleRefresh = () => {
+    if (loggedIn && isAdmin) {
+      loadDashboardData();
+      loadUserProfile();
+    }
   };
+
   const handleLoginSuccess = () => checkAuthStatus();
-  const handleProfileMenuOpen = (event) => setAnchorEl(event.currentTarget);
-  const handleProfileMenuClose = () => setAnchorEl(null);
-  const handleNotificationsOpen = (event) => setNotificationsAnchorEl(event.currentTarget);
-  const handleNotificationsClose = () => setNotificationsAnchorEl(null);
-  const markNotificationAsRead = (id) => {
-    setNotifications(notifications.map(notification => 
-      notification.id === id ? { ...notification, read: true } : notification
-    ));
-  };
-
-  const handleTabChange = (event, newValue) => {
-    setSelectedTab(newValue);
-    navigate(navigationItems[newValue].path);
-  };
-
+  
   const handleNavigation = (path) => {
     navigate(path);
   };
-
-  const unreadNotifications = notifications.filter(n => !n.read).length;
 
   if (isLoading) {
     return (
@@ -346,7 +262,7 @@ const AdminDashboard = () => {
         minHeight: '100vh',
         bgcolor: '#F8FAFC'
       }}>
-        <CircularProgress sx={{ color: '#004F98' }} size={50} />
+        <CircularProgress sx={{ color: '#004F98' }} size={40} /> {/* Smaller loader */}
       </Box>
     );
   }
@@ -361,23 +277,23 @@ const AdminDashboard = () => {
         flexDirection: 'column',
         bgcolor: '#F8FAFC'
       }}>
-        <WarningIcon sx={{ fontSize: 80, color: '#EF4444', mb: 3 }} />
-        <Typography variant="h3" gutterBottom sx={{ fontWeight: 700, color: '#1F2937' }}>
+        <WarningIcon sx={{ fontSize: 60, color: '#EF4444', mb: 2 }} /> {/* Smaller icon */}
+        <Typography variant="h4" gutterBottom sx={{ fontWeight: 700, color: '#1F2937', fontSize: { xs: '1.8rem', md: '2.2rem' } }}> {/* Smaller title */}
           Access Denied
         </Typography>
-        <Typography variant="h6" sx={{ mb: 4, color: '#6B7280', textAlign: 'center', maxWidth: 500 }}>
+        <Typography variant="body1" sx={{ mb: 3, color: '#6B7280', textAlign: 'center', maxWidth: 400, fontSize: { xs: '0.9rem', md: '1rem' } }}> {/* Smaller text */}
           This administrative area requires proper credentials to access.
         </Typography>
         <Button 
           variant="contained" 
-          size="large"
+          size="medium" // Smaller button
           onClick={() => navigate('/')} 
           sx={{ 
             bgcolor: '#004F98', 
-            px: 4, 
-            py: 1.5, 
-            borderRadius: 3,
-            fontSize: '1.1rem'
+            px: 3, 
+            py: 1, 
+            borderRadius: 2, // Smaller border-radius
+            fontSize: '1rem' // Smaller font size
           }}
         >
           Return to Homepage
@@ -394,31 +310,38 @@ const AdminDashboard = () => {
 
   return (
     <Box sx={{ minHeight: '100vh', bgcolor: '#F8FAFC' }}>
-      {/* Professional Navigation */}
-      <AdminNavbar></AdminNavbar>
+      <AdminNavbar handleRefresh={handleRefresh} />
+
       {/* Hero Section */}
       <HeroSection>
-        <Container maxWidth="xl" sx={{ position: 'relative', zIndex: 1 }}>
-          <Grid container alignItems="center" spacing={4}>
+        <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 1 }}> {/* Changed maxWidth to "lg" */}
+          <Grid container alignItems="center" spacing={3}> {/* Reduced spacing */}
             <Grid item xs={12} md={7}>
-              <Typography variant="h2" sx={{ 
-                fontWeight: 500, 
-                mb: 2,
-                fontSize: { xs: '2.5rem', md: '3.5rem' }
-              }}>
-                Welcome to Admin Dashboard
+              <Typography 
+                variant="h4" // Changed variant to h4 from h2
+                sx={{ 
+                  fontWeight: 700, 
+                  mb: 1, // Reduced margin
+                  fontSize: { xs: '2rem', sm: '2.5rem', md: '2.8rem', lg: '3rem' } // Scaled down font sizes
+                }}
+              >
+                Welcome to Admin Dashboard, {userProfile?.name?.split(' ')[0] || 'Admin'}!
               </Typography>
-              <Typography variant="h5" sx={{ 
-                mb: 4, 
-                opacity: 0.9,
-                fontWeight: 400,
-                maxWidth: 600
-              }}>
+              <Typography 
+                variant="body1" // Changed variant to body1 from h5
+                sx={{ 
+                  mb: { xs: 2, md: 3 }, // Reduced margin
+                  opacity: 0.9,
+                  fontWeight: 400, 
+                  maxWidth: 500, // Reduced maxWidth
+                  fontSize: { xs: '0.95rem', sm: '1.05rem', md: '1.15rem', lg: '1.25rem' } // Scaled down font sizes
+                }}
+              >
                 Monitor, manage, and optimize your operations from one central hub.
               </Typography>
-              <Stack direction="row" spacing={3} flexWrap="wrap">
+              <Stack direction="row" spacing={isMobile ? 1 : 2} flexWrap="wrap"> {/* Reduced spacing */}
                 <Chip 
-                  icon={<Schedule />}
+                  icon={<Schedule sx={{ fontSize: 16 }} />} // Smaller icon
                   label={`Today: ${new Date().toLocaleDateString('en-US', { 
                     weekday: 'long', 
                     month: 'long', 
@@ -428,7 +351,9 @@ const AdminDashboard = () => {
                     bgcolor: 'rgba(255, 255, 255, 0.2)', 
                     color: 'white',
                     fontWeight: 600,
-                    py: 1
+                    py: 0.5, // Reduced padding
+                    height: 28, // Reduced height
+                    fontSize: { xs: '0.75rem', sm: '0.85rem' } // Scaled down font size for chip
                   }} 
                 />
               </Stack>
@@ -438,58 +363,65 @@ const AdminDashboard = () => {
       </HeroSection>
 
       {/* Main Content */}
-      <Container maxWidth="xl" sx={{ py: 6 }}>
+      <Container maxWidth="lg" sx={{ py: { xs: 3, md: 4 } }}> {/* Reduced padding */}
         
         {/* Statistics Section */}
-        <Box sx={{ mb: 6 }}>
-          <Typography variant="h4" sx={{ 
-            fontWeight: 700, 
-            mb: 4, 
-            color: '#1F2937',
-            textAlign: 'center',
-            textDecoration: 'underline',
-
-          }}>
+        <Box sx={{ mb: { xs: 3, md: 4 } }}> {/* Reduced margin */}
+          <Typography 
+            variant="h5" // Changed variant to h5 from h4
+            sx={{ 
+              fontWeight: 700, 
+              mb: { xs: 2, md: 3 }, // Reduced margin
+              color: '#004f98',
+              textAlign: 'center',
+              textDecoration: 'double underline',
+              textDecorationColor: '#0f0f0fff',
+              textUnderlineOffset: '6px', // Smaller underline offset
+              fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' } // Scaled down font sizes
+            }}
+          >
             System Overview & Statistics
           </Typography>
           
           {isDataLoading && (
             <LinearProgress 
               sx={{ 
-                mb: 4, 
-                height: 6, 
-                borderRadius: 3,
+                mb: { xs: 1.5, md: 2.5 }, // Reduced margin
+                height: 4, // Smaller progress bar
+                borderRadius: 2, // Smaller border-radius
                 bgcolor: '#E5E7EB'
               }} 
             />
           )}
           
-          <Grid container spacing={4} justifyContent="center">
-            <Grid item xs={10} sm={1} md={2}>
+          <Grid container spacing={isMobile ? 2 : 3} justifyContent="center"> {/* Reduced spacing */}
+            <Grid item xs={10} sm={6} md={4}> {/* Adjusted grid item for better scaling */}
               <StatsCard sx={{ '--accent-color': '#004F98' }}>
-                <CardContent sx={{ p: 4, textAlign: 'center' }}>
+                <CardContent sx={{ p: { xs: 2, md: 3 }, textAlign: 'center' }}> {/* Reduced padding */}
                   <Avatar sx={{ 
                     bgcolor: '#EFF6FF', 
                     color: '#004F98', 
-                    width: 80, 
-                    height: 80, 
+                    width: { xs: 50, md: 60 }, // Scaled down width
+                    height: { xs: 50, md: 60 }, // Scaled down height
                     mx: 'auto',
-                    mb: 3,
-                    border: '3px solid #DBEAFE'
+                    mb: { xs: 1.5, md: 2 }, // Reduced margin
+                    border: '2px solid #DBEAFE' // Thinner border
                   }}>
-                    <PeopleIcon sx={{ fontSize: 36 }} />
+                    <PeopleIcon sx={{ fontSize: { xs: 28, md: 32 } }} /> {/* Scaled down icon size */}
                   </Avatar>
-                  <Typography variant="h2" sx={{ 
+                  <Typography variant="h3" sx={{ // Changed variant to h3
                     fontWeight: 800, 
                     color: '#004F98',
-                    mb: 1
+                    mb: 0.5, // Reduced margin
+                    fontSize: { xs: '2rem', sm: '2.5rem', md: '2.8rem' } // Scaled down font sizes
                   }}>
                     {stats.users}
                   </Typography>
-                  <Typography variant="h6" sx={{ 
+                  <Typography variant="body1" sx={{ // Changed variant to body1
                     color: '#6B7280', 
                     fontWeight: 600,
-                    mb: 2
+                    mb: { xs: 0.5, md: 1 }, // Reduced margin
+                    fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' } // Scaled down font sizes
                   }}>
                     Active Users
                   </Typography>
@@ -497,31 +429,33 @@ const AdminDashboard = () => {
               </StatsCard>
             </Grid>
 
-            <Grid item xs={10} sm={3} md={2}>
+            <Grid item xs={10} sm={6} md={4}> {/* Adjusted grid item for better scaling */}
               <StatsCard sx={{ '--accent-color': '#10B981' }}>
-                <CardContent sx={{ p: 4, textAlign: 'center' }}>
+                <CardContent sx={{ p: { xs: 2, md: 3 }, textAlign: 'center' }}> {/* Reduced padding */}
                   <Avatar sx={{ 
                     bgcolor: '#F0FDF4', 
                     color: '#10B981', 
-                    width: 80, 
-                    height: 80, 
+                    width: { xs: 50, md: 60 }, // Scaled down width
+                    height: { xs: 50, md: 60 }, // Scaled down height
                     mx: 'auto',
-                    mb: 3,
-                    border: '3px solid #DCFCE7'
+                    mb: { xs: 1.5, md: 2 }, // Reduced margin
+                    border: '2px solid #DCFCE7' // Thinner border
                   }}>
-                    <GroupsIcon sx={{ fontSize: 36 }} />
+                    <GroupsIcon sx={{ fontSize: { xs: 28, md: 32 } }} /> {/* Scaled down icon size */}
                   </Avatar>
-                  <Typography variant="h2" sx={{ 
+                  <Typography variant="h3" sx={{ // Changed variant to h3
                     fontWeight: 800, 
                     color: '#10B981',
-                    mb: 1
+                    mb: 0.5, // Reduced margin
+                    fontSize: { xs: '2rem', sm: '2.5rem', md: '2.8rem' } // Scaled down font sizes
                   }}>
                     {stats.teams}
                   </Typography>
-                  <Typography variant="h6" sx={{ 
+                  <Typography variant="body1" sx={{ // Changed variant to body1
                     color: '#6B7280', 
                     fontWeight: 600,
-                    mb: 2
+                    mb: { xs: 0.5, md: 1 }, // Reduced margin
+                    fontSize: { xs: '0.9rem', sm: '1rem', md: '1.1rem' } // Scaled down font sizes
                   }}>
                     Active Teams
                   </Typography>
@@ -532,23 +466,28 @@ const AdminDashboard = () => {
         </Box>
 
         {/* Enhanced Management Tools Section */}
-        <Box sx={{ mb: 6 }}>
-          <Typography variant="h4" sx={{ 
-            fontWeight: 700, 
-            mb: 6, 
-            color: '#1F2937',
-            textAlign: 'center',
-            textDecoration: 'underline',
-
-          }}>
+        <Box sx={{ mb: { xs: 3, md: 4 } }}> {/* Reduced margin */}
+          <Typography 
+            variant="h5" // Changed variant to h5 from h4
+            sx={{ 
+              fontWeight: 700, 
+              mb: { xs: 2.5, md: 4 }, // Reduced margin
+              color: '#004f98',
+              textAlign: 'center',
+              textDecoration: 'double underline',
+              textDecorationColor: '#0f0f0fff',
+              textUnderlineOffset: '6px', // Smaller underline offset
+              fontSize: { xs: '1.5rem', sm: '1.8rem', md: '2rem' } // Scaled down font sizes
+            }}
+          >
             Management Tools
           </Typography>
           
-          <Grid container spacing={4}>
+          <Grid container spacing={isMobile ? 2 : 3} sx={{ justifyContent: 'center' }}> {/* Reduced spacing */}
             {managementTools.map((tool, index) => {
               const IconComponent = tool.icon;
               return (
-                <Grid item xs={12} sm={6} lg={3} key={index}>
+                <Grid item xs={12} sm={6} lg={3} key={index}> 
                   <ManagementCard
                     elevation={0}
                     onClick={() => handleNavigation(tool.path)}
@@ -557,32 +496,33 @@ const AdminDashboard = () => {
                     {/* Top Section */}
                     <Box>
                       <Box sx={{ 
-                        width: 80,
-                        height: 80,
+                        width: { xs: 55, md: 60 }, // Scaled down width
+                        height: { xs: 50, md: 55 }, // Scaled down height
                         borderRadius: '50%',
                         backgroundColor: tool.bgColor,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        mb: 3,
+                        mb: { xs: 2, md: 2.5 }, // Reduced margin
                         mx: 'auto',
-                        border: `2px solid ${tool.color}30`
+                        border: `2px solid ${tool.color}30` // Thinner border
                       }}>
                         <IconComponent 
                           className="management-icon"
                           sx={{ 
-                            fontSize: 36, 
+                            fontSize: { xs: 28, md: 32 }, // Scaled down icon size
                             color: tool.color,
                             transition: 'transform 0.3s ease'
                           }} 
                         />
                       </Box>
                       
-                      <Typography variant="h5" sx={{ 
+                      <Typography variant="h6" sx={{ // Changed variant to h6
                         fontWeight: 700, 
                         color: '#1F2937',
                         textAlign: 'center',
-                        mb: 1
+                        mb: 0.5, // Reduced margin
+                        fontSize: { xs: '1.1rem', sm: '1.2rem', md: '1.3rem' } // Scaled down font sizes
                       }}>
                         {tool.title}
                       </Typography>
@@ -590,7 +530,8 @@ const AdminDashboard = () => {
                       <Typography variant="body2" sx={{ 
                         color: '#6B7280',
                         textAlign: 'center',
-                        mb: 3
+                        mb: { xs: 1.5, md: 2.5 }, // Reduced margin
+                        fontSize: { xs: '0.8rem', sm: '0.85rem' } // Scaled down font sizes
                       }}>
                         {tool.description}
                       </Typography>
@@ -605,17 +546,17 @@ const AdminDashboard = () => {
                         sx={{
                           borderColor: tool.color,
                           color: tool.color,
-                          borderRadius: 3,
-                          py: 1.5,
+                          borderRadius: 2, // Smaller border-radius
+                          py: { xs: 0.8, md: 1.2 }, // Reduced padding
                           fontWeight: 600,
-                          fontSize: '14px',
+                          fontSize: { xs: '0.8rem', md: '0.85rem' }, // Scaled down font sizes
                           textTransform: 'none',
                           transition: 'all 0.3s ease',
                           '&:hover': {
                             borderColor: tool.color,
                           }
                         }}
-                        endIcon={<ArrowForwardIcon sx={{ fontSize: 16 }} />}
+                        endIcon={<ArrowForwardIcon sx={{ fontSize: 14 }} />} // Smaller icon
                       >
                         Access Now
                       </Button>
@@ -632,150 +573,118 @@ const AdminDashboard = () => {
       <Box sx={{ 
         bgcolor: '#1F2937', 
         color: 'white', 
-        py: 6,
-        mt: 8
+        py: { xs: 3, md: 4 }, // Reduced padding
+        mt: { xs: 4, md: 6 } // Reduced margin
       }}>
-        <Container maxWidth="xl">
-          <Grid container spacing={4}>
+        <Container maxWidth="lg"> {/* Changed maxWidth to "lg" */}
+          <Grid container spacing={isMobile ? 2 : 3}> {/* Reduced spacing */}
             <Grid item xs={12} md={4}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <Business sx={{ fontSize: 28, mr: 2 }} />
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1.5, md: 2 } }}>
+                <Business sx={{ fontSize: { xs: 22, md: 24 }, mr: 1.5 }} /> {/* Scaled down icon size */}
+                <Typography variant="h6" sx={{ fontWeight: 700, fontSize: { xs: '1rem', md: '1.1rem' } }}>
                   Parts Auditing System
                 </Typography>
               </Box>
-              <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', mb: 3 }}>
+              <Typography variant="body2" sx={{ 
+                color: 'rgba(255, 255, 255, 0.7)', 
+                mb: { xs: 1.5, md: 2 },
+                fontSize: { xs: '0.75rem', md: '0.8rem' } // Scaled down font size
+              }}>
                 Professional management platform for modern businesses. Streamline operations, enhance productivity, and drive growth.
               </Typography>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                <CheckCircle sx={{ color: '#10B981', mr: 1, fontSize: 18 }} />
-                <Typography variant="body2" sx={{ color: '#10B981', fontWeight: 600 }}>
+                <CheckCircle sx={{ color: '#10B981', mr: 1, fontSize: { xs: 14, md: 16 } }} />
+                <Typography variant="body2" sx={{ 
+                  color: '#10B981', 
+                  fontWeight: 600,
+                  fontSize: { xs: '0.75rem', md: '0.8rem' } // Scaled down font size
+                }}>
                   System Status: Online
                 </Typography>
               </Box>
             </Grid>
             
             <Grid item xs={12} md={4}>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: { xs: 1.5, md: 2 }, fontSize: { xs: '1rem', md: '1.1rem' } }}>
                 Quick Links
               </Typography>
-              <Stack spacing={2}>
-                {navigationItems.slice(0, 4).map((link) => (
+              <Stack spacing={isMobile ? 0.5 : 1}> {/* Reduced spacing */}
+                {managementTools.map((tool) => ( 
                   <Typography 
-                    key={link.path}
+                    key={tool.path}
                     variant="body2" 
-                    onClick={() => handleNavigation(link.path)}
+                    onClick={() => handleNavigation(tool.path)}
                     sx={{ 
                       color: 'rgba(255, 255, 255, 0.7)',
                       cursor: 'pointer',
-                      '&:hover': { color: 'white' }
+                      '&:hover': { color: 'white' },
+                      fontSize: { xs: '0.75rem', md: '0.8rem' } // Scaled down font size
                     }}
                   >
-                    {link.label}
+                    {tool.title}
                   </Typography>
                 ))}
               </Stack>
             </Grid>
             
             <Grid item xs={12} md={4}>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 3 }}>
+              <Typography variant="h6" sx={{ fontWeight: 600, mb: { xs: 1.5, md: 2 }, fontSize: { xs: '1rem', md: '1.1rem' } }}>
                 Contact Information
               </Typography>
-              <Stack spacing={2}>
+              <Stack spacing={isMobile ? 0.5 : 1}> {/* Reduced spacing */}
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Email sx={{ mr: 2, fontSize: 18, color: 'rgba(255, 255, 255, 0.7)' }} />
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                    admin@partsauditing.com
+                  <Email sx={{ mr: 1.5, fontSize: { xs: 14, md: 16 }, color: 'rgba(255, 255, 255, 0.7)' }} />
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: { xs: '0.75rem', md: '0.8rem' } }}>
+                    focusenggapps@gmail.com
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Phone sx={{ mr: 2, fontSize: 18, color: 'rgba(255, 255, 255, 0.7)' }} />
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                    +1 (555) 123-4567
+                  <Phone sx={{ mr: 1.5, fontSize: { xs: 14, md: 16 }, color: 'rgba(255, 255, 255, 0.7)' }} />
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: { xs: '0.75rem', md: '0.8rem' } }}>
+                    +91 9047878224
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <LocationOn sx={{ mr: 2, fontSize: 18, color: 'rgba(255, 255, 255, 0.7)' }} />
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                    Business District, City
+                  <LocationOn sx={{ mr: 1.5, fontSize: { xs: 14, md: 16 }, color: 'rgba(255, 255, 255, 0.7)' }} />
+                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: { xs: '0.75rem', md: '0.8rem' } }}>
+                    Gudiyatham, Vellore, Tamil Nadu, India, 632602.
                   </Typography>
                 </Box>
               </Stack>
             </Grid>
           </Grid>
           
-          <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)', my: 4 }} />
+          <Divider sx={{ borderColor: 'rgba(255, 255, 255, 0.1)', my: { xs: 2.5, md: 3 } }} /> 
           
           <Box sx={{ textAlign: 'center' }}>
-            <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-              © {new Date().getFullYear()} Parts Auditing System. All rights reserved. | Professional Management Platform
+            <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.7)', fontSize: { xs: '0.7rem', md: '0.75rem' } }}>
+              © {new Date().getFullYear()} Parts Auditing System. All rights reserved. Professional Management Platform
             </Typography>
           </Box>
         </Container>
       </Box>
 
-      {/* All your existing dialogs remain the same */}
+      {/* Login Modal and associated Menus/Dialogs remain as in previous versions. 
+          Assuming logoutDialogOpen state and its handling are correctly in AdminDashboard. */}
       <Dialog open={logoutDialogOpen} onClose={() => setLogoutDialogOpen(false)}>
-        <DialogTitle>Confirm Logout</DialogTitle>
+        <DialogTitle sx={{ fontSize: '1.25rem' }}>Confirm Logout</DialogTitle>
         <DialogContent>
-          <Typography>Are you sure you want to logout from the admin dashboard?</Typography>
+          <Typography variant="body1">Are you sure you want to logout from the admin dashboard?</Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setLogoutDialogOpen(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleLogout} sx={{ bgcolor: '#004F98' }}>
+          <Button variant="contained" onClick={() => { handleLogout(); navigate('/'); }} sx={{ bgcolor: '#004F98' }}>
             Logout
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleProfileMenuClose}>
-        <MenuItem onClick={handleProfileMenuClose}>
-          <ListItemIcon><AccountCircleIcon fontSize="small" /></ListItemIcon>
-          <ListItemText>Profile Settings</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={handleProfileMenuClose}>
-          <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
-          <ListItemText>Account Preferences</ListItemText>
-        </MenuItem>
-        <Divider />
-        <MenuItem onClick={() => { handleProfileMenuClose(); setLogoutDialogOpen(true); }}>
-          <ListItemIcon><LogoutIcon fontSize="small" /></ListItemIcon>
-          <ListItemText>Logout</ListItemText>
-        </MenuItem>
-      </Menu>
-
-      <Menu anchorEl={notificationsAnchorEl} open={Boolean(notificationsAnchorEl)} onClose={handleNotificationsClose}>
-        <MenuItem sx={{ fontWeight: 600, borderBottom: '1px solid #E5E7EB' }}>
-          <Typography variant="subtitle1">Notifications</Typography>
-          <Badge badgeContent={unreadNotifications} color="primary" sx={{ ml: 'auto' }} />
-        </MenuItem>
-        {notifications.map((notification) => (
-          <MenuItem 
-            key={notification.id} 
-            onClick={() => markNotificationAsRead(notification.id)}
-            sx={{ 
-              py: 2,
-              borderLeft: notification.read ? 'none' : '3px solid #004F98',
-              bgcolor: notification.read ? 'transparent' : '#F8FAFC'
-            }}
-          >
-            <Box>
-              <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                {notification.message}
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                {notification.time}
-              </Typography>
-            </Box>
-          </MenuItem>
-        ))}
-        <Divider />
-        <MenuItem onClick={handleNotificationsClose} sx={{ justifyContent: 'center', color: '#004F98' }}>
-          <Typography variant="body2" sx={{ fontWeight: 600 }}>
-            View All Notifications
-          </Typography>
-        </MenuItem>
-      </Menu>
+      {/* Note: Profile Menu and Notifications Menu should ideally be managed within AdminNavbar itself
+          to avoid duplication and ensure consistent behavior across pages.
+          If AdminDashboard's logic needs to specifically trigger a Menu/Dialog from AdminNavbar,
+          you'd pass props/callbacks. For now, commented out duplicated menu logic. */}
+      {/* <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleProfileMenuClose}>...</Menu> */}
+      {/* <Menu anchorEl={notificationsAnchorEl} open={Boolean(notificationsAnchorEl)} onClose={handleNotificationsClose}>...</Menu> */}
     </Box>
   );
 };

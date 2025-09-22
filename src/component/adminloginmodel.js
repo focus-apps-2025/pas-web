@@ -37,7 +37,7 @@ const StyledDialog = styled(Dialog)(({ theme }) => ({
     boxShadow: '0 24px 48px rgba(0, 79, 152, 0.15), 0 12px 24px rgba(0, 79, 152, 0.1)',
     border: '1px solid rgba(0, 79, 152, 0.08)',
     overflow: 'hidden',
-    minHeight: '500px',
+    minHeight: '400px',
   }
 }));
 
