@@ -57,6 +57,7 @@ import { styled } from '@mui/material/styles';
 import api from '../../services/api';
 import authManager from '../../services/authsession.js';
 import AdminNavbar from '../../component/adminnavbar.js';
+import LoadingOverlay from '../../component/loadingoverlay.js';
 
 // Styled components
 const StyledCard = styled(Card)(({ theme, isCurrentUser }) => ({
@@ -487,27 +488,19 @@ const UserManagement = () => {
     setSelectedRoleFilter('all');
     setShowActiveOnly(false);
   };
-
+  
   if (loading) {
     return (
       <Box sx={{ bgcolor: AppColors.backgroundColor, minHeight: '100vh' }}>
         <AdminNavbar handleRefresh={handleRefresh} />
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          height: 'calc(100vh - 80px)',
-          flexDirection: 'column',
-          gap: 3
-        }}>
-          <CircularProgress sx={{ color: AppColors.primaryColor }} />
-          <Typography variant="h6" color="textSecondary">
-            Loading user data...
-          </Typography>
+        <Box>
+          {loading && <LoadingOverlay open={loading} message="Loading Users..." />}
         </Box>
       </Box>
     );
   }
+  {loading && <LoadingOverlay open={loading} message="Loading user data..." />}
+
 
   return (
     <Box sx={{ bgcolor: AppColors.backgroundColor, minHeight: '100vh' }}>
