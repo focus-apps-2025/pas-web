@@ -498,7 +498,6 @@ useEffect(() => {
 }, [loadRacks]); // This hook now re-runs whenever any dependency of loadRacks changes
 
 
-
 // Add this function to get the total N/A count
 const fetchTotalMissingInfo = async (teamParam = selectedTeam) => {
   if (!teamParam) {
