@@ -480,11 +480,8 @@ const loadRacks = useCallback(async () => {
 
     setRacks(response.racks || []);
     setTotalRacks(response.totalCount || 0);
-
-    // Load user stats if date is selected
-    await fetchUserStats();
-    // Update missing info count
-    await fetchTotalMissingInfo();
+     fetchUserStats()
+    fetchTotalMissingInfo(teamId);
     
     // NO setRackPage() call here.
 
