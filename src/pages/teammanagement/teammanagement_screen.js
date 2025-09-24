@@ -1329,6 +1329,11 @@ const openRackDetails = (rack) => {
       showSnackbar('No racks to finish work for.', 'warning');
       return;
     }
+    const closeDialog = () => {
+        setTeamDeleteDialogOpen(false);
+        // It's good practice to clear the state after closing
+        setTeamToDelete(null); 
+    };
     
     const confirmationDialog = {
       title: 'Confirm Finish Work',
@@ -1393,8 +1398,10 @@ const openRackDetails = (rack) => {
           showSnackbar(`Error finishing work: ${error.message}`, 'error');
         } finally {
           setLoading(false);
+          closeDialog();
         }
-      }
+      },
+
     };
     
     // Show confirmation dialog
