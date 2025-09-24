@@ -97,6 +97,7 @@ import { styled, alpha } from '@mui/material/styles';
 import { useNavigate, useParams, Link as RouterLink } from 'react-router-dom';
 import { format } from 'date-fns';
 import AdminNavbar from '../../component/adminnavbar.js';
+import LoadingOverlay from '../../component/loadingoverlay.js';
 import api from '../../services/api';
 import authManager from '../../services/authsession.js';
 import * as XLSX from 'xlsx';
@@ -249,6 +250,7 @@ const [detailsActiveTab, setDetailsActiveTab] = useState('info');
   const [isWorkSubmitted, setIsWorkSubmitted] = useState(false);
   const [serverUserStats, setServerUserStats] = useState({});
   const [totalMissingInfo, setTotalMissingInfo] = useState(0);
+  const [loadingMissingInfo, setLoadingMissingInfo] = useState(false);
 
   
   // For rack details editing
@@ -468,8 +470,9 @@ const loadRacks = async (page = rackPage, limit = racksPerPage, team = selectedT
     // Handle special search cases for SERVER-SIDE filtering
     if (rackSearch) {
       const s = rackSearch.toLowerCase();
-      if (s === 'n/a' || s === 'na') {
-        params.missingInfo = true;
+        if (s === 'n/a' || s === 'na') {
+          params.search = 'n/a';   
+  
       } else if (s === 'in_stock' || s === 'in stock') {
         params.stockStatus = 'in_stock';
       } else if (s === 'low_stock' || s === 'low stock') {
@@ -494,10 +497,16 @@ const loadRacks = async (page = rackPage, limit = racksPerPage, team = selectedT
     setRackPage(page);
 
     // Load user stats if date is selected
-    await fetchUserStats();
+
 
     // Update missing info count for the team (uses same team param)
-    await fetchTotalMissingInfo(team);
+    
+   // ✅ Wait only for user stats (fast)
+    await fetchUserStats();
+
+    // ✅ Fire missing-info request in background, non-blocking
+    fetchTotalMissingInfo(team);
+
   } catch (error) {
     console.error('Error loading racks:', error);
     setError(`Failed to load racks: ${error.message}`);
@@ -509,7 +518,6 @@ const loadRacks = async (page = rackPage, limit = racksPerPage, team = selectedT
 
 
 // Add this function to get the total N/A count
-// Accept optional team to avoid relying on selectedTeam being updated
 const fetchTotalMissingInfo = async (teamParam = selectedTeam) => {
   if (!teamParam) {
     setTotalMissingInfo(0);
@@ -519,8 +527,8 @@ const fetchTotalMissingInfo = async (teamParam = selectedTeam) => {
   try {
     const params = {
       teamId: teamParam._id || teamParam.id,
-      missingInfo: true,
-      limit: 1 // only need totalCount
+      search: 'n/a',   // ✅ make sure we request N/A racks like mobile
+      limit: 1         // we don’t need data, only totalCount
     };
 
     if (selectedDate) {
@@ -533,7 +541,11 @@ const fetchTotalMissingInfo = async (teamParam = selectedTeam) => {
     console.error('Error fetching missing info count:', error);
     setTotalMissingInfo(0);
   }
+   finally {
+    setLoadingMissingInfo(false);  //  stop loading state
+  }
 };
+
 
 
   
@@ -621,13 +633,13 @@ const filterRacks = () => {
       filtered = filtered.filter(rack => getQuantityStatus(rack.nextQty) === "out_of_stock");
     } 
     else if (rackSearch === 'n/a') {
-      // Filter racks that have any missing information
       filtered = filtered.filter(rack => 
         (!rack.mrp || rack.mrp === 0) || 
         (!rack.ndp || rack.ndp === 0) || 
         (!rack.materialDescription || rack.materialDescription.trim() === '')
       );
-    } 
+    }
+
     else {
       // Standard text search
       filtered = filtered.filter(rack => 
@@ -2264,34 +2276,43 @@ const SearchField = styled(TextField)({
       </Box>
     </Grid>
     <Grid item xs={6} sm={3}>
-      {/* N/A Counter Card */}
-      <Box sx={{ 
-        p: 2, 
-        borderRadius: 1, 
-        bgcolor: 'rgba(107,114,128, 0.1)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center'
-      }}>
-        <Typography variant="h5" fontWeight="bold" color="#6B7280">
-          {fetchTotalMissingInfo}
-        </Typography>
-        <Typography variant="body2" color="#6B7280" sx={{ textAlign: 'center' }}>
-          Missing Info
-        </Typography>
-        <Tooltip title="View racks with missing information">
-          <Button 
-            size="small" 
-            sx={{ mt: 1, color: '#6B7280', fontSize: '0.7rem' }}
-            onClick={() => {
-              setRackSearch('n/a');
-            }}
-          >
-            View N/A
-          </Button>
-        </Tooltip>
-      </Box>
-    </Grid>
+  {/* N/A Counter Card */}
+  <Box sx={{ 
+    p: 2, 
+    borderRadius: 1, 
+    bgcolor: 'rgba(107,114,128, 0.1)',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center'
+  }}>
+    {/*  show the total N/A count here */}
+    <Typography variant="h5" fontWeight="bold" color="#6B7280">
+        {loadingMissingInfo ? (
+          <CircularProgress size={20} sx={{ color: '#6B7280' }} />
+        ) : (
+          totalMissingInfo
+        )}
+    </Typography>
+
+
+    <Typography variant="body2" color="#6B7280" sx={{ textAlign: 'center' }}>
+      Missing Info
+    </Typography>
+
+    <Tooltip title="View racks with missing information">
+      <Button 
+        size="small" 
+        sx={{ mt: 1, color: '#6B7280', fontSize: '0.7rem' }}
+        onClick={() => {
+          setRackSearch('n/a');   // ✅ clicking shows all N/A racks
+        }}
+      >
+        View N/A
+      </Button>
+    </Tooltip>
+  </Box>
+</Grid>
+
   </Grid>
 </Paper>
 
@@ -2313,6 +2334,8 @@ const SearchField = styled(TextField)({
         </Typography>
       </Box>
     </Box>
+   
+
  
             
             {/* Table View */}
@@ -2375,7 +2398,17 @@ const SearchField = styled(TextField)({
                         >
                           {rack.materialDescription || 'N/A'}
                         </Typography>
+                        
                       </TableCell>
+                      {rackSearch.toLowerCase().includes('na') && (
+                        <TableCell>
+                          {(!rack.mrp || rack.mrp === 0) && <Chip label="Missing MRP" color="error" size="small" />}
+                          {(!rack.ndp || rack.ndp === 0) && <Chip label="Missing NDP" color="warning" size="small" />}
+                          {(!rack.materialDescription || rack.materialDescription.trim() === '') && (
+                            <Chip label="Missing Description" color="info" size="small" />
+                          )}
+                        </TableCell>
+                      )}
                       <TableCell>{rack.scannedBy?.name || 'Unknown'}</TableCell>
                       <TableCell align="center">
                         <Box sx={{ display: 'flex', justifyContent: 'center' }}>
@@ -2420,30 +2453,20 @@ const SearchField = styled(TextField)({
     <Box sx={{ bgcolor: backgroundColor, minHeight: '100vh' }}>
       <AdminNavbar handleRefresh={handleRefresh} />
       
-      {/* Page Header */}
-      
       {/* Main Content */}
-      <ContentContainer maxWidth="xl">
-        {/* Loading State */}
-        {loading && (
-          <Backdrop
-            sx={{ color: '#fff', zIndex: (theme) => theme.zIndex.drawer + 1, position: 'absolute' }}
-            open={loading}
-          >
-            <CircularProgress color="inherit" />
-          </Backdrop>
-        )}
-        
-        {/* Error State */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }}>
-            {error}
-          </Alert>
-        )}
-        
-        {/* Content based on active tab */}
-        {activeTab === 'teams' ? renderTeamsView() : renderRacksView()}
-      </ContentContainer>
+   {/* Main Content */}
+<ContentContainer maxWidth="xl">
+  <LoadingOverlay open={loading} message={activeTab === 'teams' ? "Loading Teams..." : "Loading Racks..."} />
+  
+  {error && (
+    <Alert severity="error" sx={{ mb: 3 }}>
+      {error}
+    </Alert>
+  )}
+
+  {activeTab === 'teams' ? renderTeamsView() : renderRacksView()}
+</ContentContainer>
+
 <Menu
   anchorEl={teamActionMenuAnchor}
   open={Boolean(teamActionMenuAnchor)}
