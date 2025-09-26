@@ -349,15 +349,7 @@ const AdminNavbar = ({ handleRefresh }) => {
 
       {/* Profile Menu (retains original functionality) */}
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={handleProfileMenuClose}>
-        <MenuItem onClick={handleProfileMenuClose}>
-          <ListItemIcon><AccountCircleIcon fontSize="small" /></ListItemIcon>
-          <ListItemText>Profile Settings</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={handleProfileMenuClose}>
-          <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
-          <ListItemText>Account Preferences</ListItemText>
-        </MenuItem>
-        <Divider />
+        
         <MenuItem onClick={() => { handleProfileMenuClose(); setLogoutDialogOpen(true); }}>
           <ListItemIcon><LogoutIcon fontSize="small" sx={{color:'#f01c1cff'}} /></ListItemIcon>
           <ListItemText>Logout</ListItemText>
