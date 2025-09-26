@@ -3617,6 +3617,7 @@ const SearchField = styled(TextField)({
                           size="small"
                           label="Quantity"
                           type="number"
+                          name="nextQty"
                           value={editRackData.nextQty}
                           onChange={handleEditRackChange}
                           error={!!editRackErrors.nextQty}
