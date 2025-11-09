@@ -58,6 +58,7 @@ import { styled } from '@mui/material/styles';
 import * as XLSX from 'xlsx';
 import { useNavigate } from 'react-router-dom';
 import AdminNavbar from '../../component/adminnavbar.js';
+import LoadingOverlay from '../../component/loadingoverlay.js';
 
 // Styled Components matching AdminDashboard
 const ProfessionalCard = styled(Card)(({ theme }) => ({
@@ -405,106 +406,109 @@ const StockComparison = () => {
   };
 
   const generateInitialReport = () => {
-    if (!dmsData || !physicalData) {
-      setError('Please upload both DMS and Physical files first.');
-      return;
-    }
+  if (!dmsData || !physicalData) {
+    setError('Please upload both DMS and Physical files first.');
+    return;
+  }
 
-    setLoading(true);
-    setError('');
-    setBeforeData(null);
-    setBeforeFileName('');
-    setAfterData(null);
-    setAfterFileName('');
-    setCurrentStep(0);
-    setTvsTemplateData(null);
-    // Clear TVS-related unmatched and subtractions when generating initial report
-    setUnmatchedEntries({ mismatchedRack: [], emptyRack: [], partNotFound: [] });
-    setHighestQtySubtractions(new Map());
+  setLoading(true);
+  setError('');
+  setBeforeData(null);
+  setBeforeFileName('');
+  setAfterData(null);
+  setAfterFileName('');
+  setCurrentStep(0);
+  setTvsTemplateData(null);
+  setUnmatchedEntries({ mismatchedRack: [], emptyRack: [], partNotFound: [] });
+  setHighestQtySubtractions(new Map());
 
+  setTimeout(() => {
+    try {
+      const dmsHeaders = dmsData[0] || [];
+      const physicalHeaders = physicalData[0] || [];
 
-    setTimeout(() => {
-      try {
-        const dmsHeaders = dmsData[0] || [];
-        const physicalHeaders = physicalData[0] || [];
-
-        const findColumn = (headers, names) => {
-          const index = findColumnIndex(headers, names);
-          if (index === -1) {
-            console.warn(`Could not find a column with names like: ${names.join(', ')}`);
-          }
-          return index;
-        };
-
-        const partNoDmsIndex = findColumn(dmsHeaders, ['part no', 'partno', 'part number', 'part code', 'item']);
-        const qtyDmsIndex = findColumn(dmsHeaders, ['free qty', 'qty', 'quantity', 'balance']);
-        const descDmsIndex = findColumn(dmsHeaders, ['description', 'material description', 'item description']);
-        const ndpDmsIndex = findColumn(dmsHeaders, ['ndp', 'net dealer price', 'unit price']);
-
-        const partNoPhysicalIndex = findColumn(physicalHeaders, ['part no', 'partno', 'part number', 'part code', 'item']);
-        const qtyPhysicalIndex = findColumn(physicalHeaders, ['qty', 'quantity', 'stock', 'phy qty', 'count']);
-        const ndpIndex = findColumn(physicalHeaders, ['ndp', 'net dealer price', 'unit price']);
-        const mrpIndex = findColumn(physicalHeaders, ['mrp', 'max retail price', 'retail price']);
-        const descIndex = findColumn(physicalHeaders, ['description', 'material description', 'item description']);
-        const locationIndex = findColumn(physicalHeaders, ['location', 'bin', 'storage']);
-        const rackIndex = findColumn(physicalHeaders, ['rack', 'shelf', 'row']);
-
-        if (partNoDmsIndex === -1 || qtyDmsIndex === -1) {
-          throw new Error('DMS file must contain Part Number and Stock/Quantity columns.');
+      const findColumn = (headers, names) => {
+        const index = findColumnIndex(headers, names);
+        if (index === -1) {
+          console.warn(`Could not find a column with names like: ${names.join(', ')}`);
         }
-        if (partNoPhysicalIndex === -1 || qtyPhysicalIndex === -1) {
-          throw new Error('Physical file must contain Part Number and Quantity columns.');
-        }
+        return index;
+      };
 
-        const dmsMap = new Map();
-        const dmsInfo = new Map();
-        const physicalMap = new Map();
+      const partNoDmsIndex = findColumn(dmsHeaders, ['part no', 'partno', 'part number', 'part code', 'item']);
+      const qtyDmsIndex = findColumn(dmsHeaders, ['free qty', 'qty', 'quantity', 'balance']);
+      const descDmsIndex = findColumn(dmsHeaders, ['description', 'material description', 'item description']);
+      const ndpDmsIndex = findColumn(dmsHeaders, ['ndp', 'net dealer price', 'unit price']);
+      const locationDmsIndex = findColumn(dmsHeaders, ['location name', 'location']); // DMS location
 
-        for (let i = 1; i < dmsData.length; i++) {
-          const row = dmsData[i];
-          if (!row || row[partNoDmsIndex] === undefined || row[partNoDmsIndex] === null) continue;
-          const partNo = String(row[partNoDmsIndex]).trim().toUpperCase();
-          const quantity = parseFloat(row[qtyDmsIndex]) || 0;
-          if (partNo) {
-            dmsMap.set(partNo, (dmsMap.get(partNo) || 0) + quantity);
-            if (!dmsInfo.has(partNo)) {
-              dmsInfo.set(partNo, {
-                description: descDmsIndex !== -1 ? String(row[descDmsIndex] || '').trim() : '',
-                ndp: ndpDmsIndex !== -1 ? parseFloat(row[ndpDmsIndex]) || 0 : 0
-              });
-            }
-          }
-        }
+      const partNoPhysicalIndex = findColumn(physicalHeaders, ['part no', 'partno', 'part number', 'part code', 'item']);
+      const qtyPhysicalIndex = findColumn(physicalHeaders, ['qty', 'quantity', 'stock', 'phy qty', 'count']);
+      const ndpIndex = findColumn(physicalHeaders, ['ndp', 'net dealer price', 'unit price']);
+      const mrpIndex = findColumn(physicalHeaders, ['mrp', 'max retail price', 'retail price']);
+      const descIndex = findColumn(physicalHeaders, ['description', 'material description', 'item description']);
+      const locationPhysicalIndex = findColumn(physicalHeaders, ['location', 'bin', 'storage']); // Physical location
+      const rackIndex = findColumn(physicalHeaders, ['rack', 'shelf', 'row']);
 
-        for (let i = 1; i < physicalData.length; i++) {
-          const row = physicalData[i];
-          if (!row || row[partNoPhysicalIndex] === undefined || row[partNoPhysicalIndex] === null) continue;
-          const partNo = String(row[partNoPhysicalIndex]).trim().toUpperCase();
-          const quantity = parseFloat(row[qtyPhysicalIndex]) || 0;
-          if (partNo) {
-            const existing = physicalMap.get(partNo);
-            if (existing) {
-              existing.quantity += quantity;
-            } else {
-              physicalMap.set(partNo, {
-                quantity: quantity,
-                ndp: ndpIndex !== -1 ? parseFloat(row[ndpIndex]) || 0 : 0,
-                mrp: mrpIndex !== -1 ? parseFloat(row[mrpIndex]) || 0 : 0,
-                description: descIndex !== -1 ? String(row[descIndex] || '').trim() : '',
-                location: locationIndex !== -1 ? String(row[locationIndex] || '').trim() : '',
-                rack: rackIndex !== -1 ? String(row[rackIndex] || '').trim() : ''
-              });
-            }
+      if (partNoDmsIndex === -1 || qtyDmsIndex === -1) {
+        throw new Error('DMS file must contain Part Number and Stock/Quantity columns.');
+      }
+      if (partNoPhysicalIndex === -1 || qtyPhysicalIndex === -1) {
+        throw new Error('Physical file must contain Part Number and Quantity columns.');
+      }
+
+      const dmsMap = new Map();
+      const dmsInfo = new Map();
+      const physicalMap = new Map();
+
+      // Process DMS data
+      for (let i = 1; i < dmsData.length; i++) {
+        const row = dmsData[i];
+        if (!row || row[partNoDmsIndex] === undefined || row[partNoDmsIndex] === null) continue;
+        const partNo = String(row[partNoDmsIndex]).trim().toUpperCase();
+        const quantity = parseFloat(row[qtyDmsIndex]) || 0;
+        if (partNo) {
+          dmsMap.set(partNo, (dmsMap.get(partNo) || 0) + quantity);
+          if (!dmsInfo.has(partNo)) {
+            dmsInfo.set(partNo, {
+              description: descDmsIndex !== -1 ? String(row[descDmsIndex] || '').trim() : '',
+              ndp: ndpDmsIndex !== -1 ? parseFloat(row[ndpDmsIndex]) || 0 : 0,
+              location: locationDmsIndex !== -1 ? String(row[locationDmsIndex] || '').trim() : '' // Store DMS location
+            });
           }
         }
+      }
 
-        setProcessedDmsMap(new Map(dmsMap));
-        setProcessedPhysicalMap(new Map(physicalMap));
-        setDmsInfoMap(new Map(dmsInfo));
-        setInitialDmsMapForReport(new Map(dmsMap));
+      // Process Physical data
+      for (let i = 1; i < physicalData.length; i++) {
+        const row = physicalData[i];
+        if (!row || row[partNoPhysicalIndex] === undefined || row[partNoPhysicalIndex] === null) continue;
+        const partNo = String(row[partNoPhysicalIndex]).trim().toUpperCase();
+        const quantity = parseFloat(row[qtyPhysicalIndex]) || 0;
+        if (partNo) {
+          const existing = physicalMap.get(partNo);
+          if (existing) {
+            existing.quantity += quantity;
+          } else {
+            physicalMap.set(partNo, {
+              quantity: quantity,
+              ndp: ndpIndex !== -1 ? parseFloat(row[ndpIndex]) || 0 : 0,
+              mrp: mrpIndex !== -1 ? parseFloat(row[mrpIndex]) || 0 : 0,
+              description: descIndex !== -1 ? String(row[descIndex] || '').trim() : '',
+              location: locationPhysicalIndex !== -1 ? String(row[locationPhysicalIndex] || '').trim() : '', // Store physical location
+              rack: rackIndex !== -1 ? String(row[rackIndex] || '').trim() : ''
+            });
+          }
+        }
+      }
 
-        const report = generateReportFromMaps(dmsMap, physicalMap, dmsInfo, initialDmsMapForReport || dmsMap);
-        setReportData(report);
+      setProcessedDmsMap(new Map(dmsMap));
+      setProcessedPhysicalMap(new Map(physicalMap));
+      setDmsInfoMap(new Map(dmsInfo));
+      setInitialDmsMapForReport(new Map(dmsMap));
+
+      // Generate report WITH single Location column
+      const report = generateReportFromMaps(dmsMap, physicalMap, dmsInfo, physicalMap, initialDmsMapForReport || dmsMap);
+      setReportData(report);
 
         const dmsPartNosRaw = dmsData.slice(1)
           .map(r => r[partNoDmsIndex])
@@ -656,83 +660,93 @@ const StockComparison = () => {
   },
 }));
 
-  const generateReportFromMaps = (currentDmsMap, currentPhysicalMap, dmsInfoMap, initialDmsMap) => {
-    const report = [];
-    const headers = [
-      'SI no', 'PartNo', 'Part Description',
-      'DMS Stk', 'Phy Stock', 'Short', 'Excess',
-      'NDP', 'MRP',
-      'Shortage Value', 'Excess Value',
-      'Total NDP Value', 'Total MRP Value',
-      'Before NDP'
-    ];
-    report.push(headers);
+  const generateReportFromMaps = (currentDmsMap, currentPhysicalMap, dmsInfoMap, physicalMap, initialDmsMap) => {
+  const report = [];
+  // MOVED: Location column to be after PartNo
+  const headers = [
+    'SI no', 'PartNo', 'Location', 'Part Description', // MOVED: Location after PartNo
+    'DMS Stk', 'Phy Stock', 'Short', 'Excess',
+    'NDP', 'MRP',
+    'Shortage Value', 'Excess Value',
+    'Total NDP Value', 'Total MRP Value',
+    'Before NDP'
+  ];
+  report.push(headers);
 
-    const detailedRows = [];
-    const allPartNumbers = new Set([...currentPhysicalMap.keys(), ...currentDmsMap.keys(), ...dmsInfoMap.keys()]);
+  const detailedRows = [];
+  const allPartNumbers = new Set([...currentPhysicalMap.keys(), ...currentDmsMap.keys(), ...dmsInfoMap.keys()]);
 
-    let totalDms = 0, totalPhysical = 0, totalShort = 0, totalExcess = 0,
-      totalShortageValue = 0, totalExcessValue = 0,
-      totalPhysicalNdpValue = 0, totalPhysicalMrpValue = 0,
-       totalOriginalDmsValue = 0;
+  let totalDms = 0, totalPhysical = 0, totalShort = 0, totalExcess = 0,
+    totalShortageValue = 0, totalExcessValue = 0,
+    totalPhysicalNdpValue = 0, totalPhysicalMrpValue = 0,
+    totalOriginalDmsValue = 0;
 
-    for (const partNo of allPartNumbers) {
-      const physicalInfo = currentPhysicalMap.get(partNo);
-      const dmsPartInfo = dmsInfoMap.get(partNo);
+  for (const partNo of allPartNumbers) {
+    const physicalInfo = currentPhysicalMap.get(partNo);
+    const dmsPartInfo = dmsInfoMap.get(partNo);
 
-      const dmsQty = currentDmsMap.get(partNo) || 0;
-      const physicalQty = physicalInfo ? physicalInfo.quantity : 0;
+    const dmsQty = currentDmsMap.get(partNo) || 0;
+    const physicalQty = physicalInfo ? physicalInfo.quantity : 0;
 
-      const description = (physicalInfo ? physicalInfo.description : '') || (dmsPartInfo ? dmsPartInfo.description : '');
-      const ndp = (physicalInfo ? physicalInfo.ndp : 0) || (dmsPartInfo ? dmsPartInfo.ndp : 0);
-      const mrp = physicalInfo ? physicalInfo.mrp : 0;
+    const description = (physicalInfo ? physicalInfo.description : '') || (dmsPartInfo ? dmsPartInfo.description : '');
+    const ndp = (physicalInfo ? physicalInfo.ndp : 0) || (dmsPartInfo ? dmsPartInfo.ndp : 0);
+    const mrp = physicalInfo ? physicalInfo.mrp : 0;
 
-      const short = Math.max(0, dmsQty - physicalQty);
-      const excess = Math.max(0, physicalQty - dmsQty);
+    const short = Math.max(0, dmsQty - physicalQty);
+    const excess = Math.max(0, physicalQty - dmsQty);
 
-      const shortageValue = short * ndp;
-      const excessValue = excess * ndp;
+    const shortageValue = short * ndp;
+    const excessValue = excess * ndp;
 
-      const totalPhysicalNdp = physicalQty * ndp;
-      const totalPhysicalMrp = physicalQty * mrp;
+    const totalPhysicalNdp = physicalQty * ndp;
+    const totalPhysicalMrp = physicalQty * mrp;
 
-      const originalDmsValue = dmsQty * ndp;
+    const originalDmsValue = dmsQty * ndp;
 
-      totalDms += dmsQty;
-      totalPhysical += physicalQty;
-      totalShort += short;
-      totalExcess += excess;
-      totalShortageValue += shortageValue;
-      totalExcessValue += excessValue;
-      totalPhysicalNdpValue += totalPhysicalNdp;
-      totalPhysicalMrpValue += totalPhysicalMrp;
-      
-      totalOriginalDmsValue += originalDmsValue;
-
-      detailedRows.push([
-        0, partNo, description,
-        dmsQty, physicalQty, short, excess,
-        ndp, mrp,
-        shortageValue, excessValue,
-        totalPhysicalNdp, totalPhysicalMrp,
-         originalDmsValue
-      ]);
+    // DETERMINE LOCATION: Physical location takes priority, fallback to DMS location
+    let location = '';
+    if (physicalInfo && physicalInfo.location) {
+      location = physicalInfo.location; // First priority: Physical file location
+    } else if (dmsPartInfo && dmsPartInfo.location) {
+      location = dmsPartInfo.location; // Second priority: DMS file location
     }
 
-    detailedRows.forEach((row, i) => row[0] = i + 1);
+    totalDms += dmsQty;
+    totalPhysical += physicalQty;
+    totalShort += short;
+    totalExcess += excess;
+    totalShortageValue += shortageValue;
+    totalExcessValue += excessValue;
+    totalPhysicalNdpValue += totalPhysicalNdp;
+    totalPhysicalMrpValue += totalPhysicalMrp;
+    
+    totalOriginalDmsValue += originalDmsValue;
 
-    report.push([
-      '', '', 'TOTAL',
-      totalDms, totalPhysical, totalShort, totalExcess,
-      '', '',
-      totalShortageValue, totalExcessValue,
-      totalPhysicalNdpValue, totalPhysicalMrpValue,
-       totalOriginalDmsValue
+    detailedRows.push([
+      0, partNo, location, description, // MOVED: location after partNo
+      dmsQty, physicalQty, short, excess,
+      ndp, mrp,
+      shortageValue, excessValue,
+      totalPhysicalNdp, totalPhysicalMrp,
+      originalDmsValue
     ]);
-    report.push(...detailedRows);
+  }
 
-    return report;
-  };
+  detailedRows.forEach((row, i) => row[0] = i + 1);
+
+  // MOVED: Empty string for Location column in total row
+  report.push([
+    '', '', '', 'TOTAL', // ADDED: Empty location in total row
+    totalDms, totalPhysical, totalShort, totalExcess,
+    '', '',
+    totalShortageValue, totalExcessValue,
+    totalPhysicalNdpValue, totalPhysicalMrpValue,
+    totalOriginalDmsValue
+  ]);
+  report.push(...detailedRows);
+
+  return report;
+};
 
   const applyBeforeFileAdjustment = () => {
     if (!beforeData || !processedDmsMap || !processedPhysicalMap || !dmsInfoMap || !initialDmsMapForReport) {
@@ -1060,7 +1074,7 @@ const applyReportStyling = (worksheet, reportData, reportHeadersStartRow = 1) =>
   }
 
   // Apply column widths
-  const columnWidths = [8, 15, 30, 12, 12, 10, 10, 12, 12, 15, 15, 18, 18, 15];
+  const columnWidths = [8, 15, 20, 30, 12, 12, 10, 10, 12, 12, 15, 15, 18, 18, 15]; 
   
   /*console.log('=== APPLYING COLUMN WIDTHS ===');*/
   columnWidths.forEach((width, index) => {
@@ -1414,13 +1428,13 @@ const applyReportStyling = (worksheet, reportData, reportHeadersStartRow = 1) =>
 
             const partNo = String(row[partNoIndex]).trim().toUpperCase();
             const rack = rackIndex !== -1 ? String(row[rackIndex] || '').trim() : '';
-            const currentQty = parseFloat(row[qtyIndex]) || 0;
+            const currentQty = parseInt(row[qtyIndex]) || 0;
             const ndp = ndpIndex !== -1 ? parseFloat(row[ndpIndex]) || 0 : 0;
             const mrp = mrpIndex !== -1 ? parseFloat(row[mrpIndex]) || 0 : 0;
             const location = locationIndex !== -1 ? String(row[locationIndex] || '').trim() : '';
 
             const key = `${partNo}|${rack}`;
-
+          
             // Populate maps for tvsAfterData matching
             if (partNo && rack) {
                 physicalDataMap.set(key, true);
@@ -1571,13 +1585,13 @@ const applyUnmatchedQuantities = useCallback((currentUnmatchedEntries) => {
     console.log('emptyRack entries:', currentUnmatchedEntries.emptyRack);
     console.log('mismatchedRack entries:', currentUnmatchedEntries.mismatchedRack);
     
-    // Check if M1010200 is in the entries
+    /*Check if M1010200 is in the entries
     const m1010200EmptyRack = currentUnmatchedEntries.emptyRack.find(entry => entry.partNo === 'M1010200');
     const m1010200MismatchedRack = currentUnmatchedEntries.mismatchedRack.find(entry => entry.partNo === 'M1010200');
     
     console.log('M1010200 in emptyRack?', m1010200EmptyRack);
     console.log('M1010200 in mismatchedRack?', m1010200MismatchedRack);
-
+    */
     if (currentUnmatchedEntries.mismatchedRack.length === 0 && currentUnmatchedEntries.emptyRack.length === 0) {
         setError("No unmatched entries (mismatched rack or empty rack) to apply.");
         return;
@@ -2069,7 +2083,7 @@ const applyUnmatchedQuantities = useCallback((currentUnmatchedEntries) => {
     <Box sx={{ minHeight: '100vh', bgcolor: '#F8FAFC' }}>
       {/* Navigation Bar */}
       <AdminNavbar />
-
+      
       {/* Hero Section */}
       <HeroSection>
         <Container maxWidth="xl">
@@ -2412,7 +2426,7 @@ const applyUnmatchedQuantities = useCallback((currentUnmatchedEntries) => {
                 disabled={!dmsData || !physicalData || loading}
                 startIcon={<CompareArrows />}
                 sx={{
-                  backgroundColor: '#F59E0B',
+                  backgroundColor: '#F59E0B',                                     
                   px: 6,
                   py: 2,
                   fontSize: '1.1rem',
