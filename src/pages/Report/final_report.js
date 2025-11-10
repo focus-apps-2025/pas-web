@@ -3059,14 +3059,14 @@ const applyUnmatchedQuantities = useCallback((currentUnmatchedEntries) => {
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 4, mt: 1 }}>
                           <Typography variant="body2">
-                            Report Physical Total: <strong>{formatNumber(reportData[1][4])}</strong>
+                            Report Physical Total: <strong>{formatNumber(reportData[1][5])}</strong>
                           </Typography>
                           <Typography variant="body2">
                             TVS Template Total: <strong>{formatNumber(tvsStockTotal)}</strong>
                           </Typography>
                           <Chip 
-                            label={Math.abs(reportData[1][6] - tvsStockTotal) <= 0.01 ? "Totals Match" : "Totals Don't Match"} 
-                            color={Math.abs(reportData[1][6] - tvsStockTotal) <= 0.01 ? "success" : "error"} 
+                            label={Math.abs(reportData[1][5] - tvsStockTotal) <= 0.01 ? "Totals Match" : "Totals Don't Match"} 
+                            color={Math.abs(reportData[1][5] - tvsStockTotal) <= 0.01 ? "success" : "error"} 
                             size="small"
                           />
                         </Box>
