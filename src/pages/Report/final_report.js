@@ -3065,8 +3065,8 @@ const applyUnmatchedQuantities = useCallback((currentUnmatchedEntries) => {
                             TVS Template Total: <strong>{formatNumber(tvsStockTotal)}</strong>
                           </Typography>
                           <Chip 
-                            label={Math.abs(reportData[1][4] - tvsStockTotal) <= 0.01 ? "Totals Match" : "Totals Don't Match"} 
-                            color={Math.abs(reportData[1][4] - tvsStockTotal) <= 0.01 ? "success" : "error"} 
+                            label={Math.abs(reportData[1][15] - tvsStockTotal) <= 0.01 ? "Totals Match" : "Totals Don't Match"} 
+                            color={Math.abs(reportData[1][15] - tvsStockTotal) <= 0.01 ? "success" : "error"} 
                             size="small"
                           />
                         </Box>
