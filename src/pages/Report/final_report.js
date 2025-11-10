@@ -1926,13 +1926,13 @@ const applyUnmatchedQuantities = useCallback((currentUnmatchedEntries) => {
   const summary = {
     partBeforeDup: dupStats.dmsDupCount,
     partAfterDup: dupStats.dmsDupCount + dupStats.physOnlyUniqueCount,
-    shortageCount: reportData.slice(2).filter(r => r[6] > 0).length, // Changed from 5 to 6
+    shortageCount: reportData.slice(2).filter(r => r[5] > 0).length, // Changed from 5 to 6
     excessCount: reportData.slice(2).filter(r => r[7] > 0).length,   // Changed from 6 to 7
-    shortageValue: tot[11],  // Changed from 9 to 11
-    excessValue: tot[12],    // Changed from 10 to 12
-    ndpBefore: tot[15],      // Changed from 13 to 15
-    ndpAfter: tot[13],       // Changed from 11 to 13
-    mrpAfter: tot[14],       // Changed from 12 to 14
+    shortageValue: tot[10],  // Changed from 9 to 11
+    excessValue: tot[11],    // Changed from 10 to 12
+    ndpBefore: tot[14],      // Changed from 13 to 15
+    ndpAfter: tot[12],       // Changed from 11 to 13
+    mrpAfter: tot[13],       // Changed from 12 to 14
     lineItemsDup: dupStats.physDupCount,
     lineItemsUnique: dupStats.physUniqueCount,
     extrasUnique: dupStats.physOnlyUniqueCount
@@ -1949,7 +1949,7 @@ const applyUnmatchedQuantities = useCallback((currentUnmatchedEntries) => {
   const buildSummaryAoA = (s, title, reportData) => {
   if (!s) return null;
   const tot = reportData?.[1] || [];
-  const mrpAfter = Number(tot[14] || 0); // Changed from 12 to 14
+  const mrpAfter = Number(tot[13] || 0); // Changed from 12 to 14
 
   const rows = [
     [title || 'Summary', '', '', ''], // Main title row
