@@ -1928,11 +1928,11 @@ const applyUnmatchedQuantities = useCallback((currentUnmatchedEntries) => {
       partAfterDup: dupStats.dmsDupCount + dupStats.physOnlyUniqueCount,
       shortageCount: reportData.slice(2).filter(r => r[5] > 0).length,
       excessCount: reportData.slice(2).filter(r => r[6] > 0).length,
-      shortageValue: tot[9],
-      excessValue: tot[10],
-      ndpBefore: tot[13],
-      ndpAfter: tot[11],
-      mrpAfter: tot[12],
+      shortageValue: tot[10],
+      excessValue: tot[11],
+      ndpBefore: tot[14],
+      ndpAfter: tot[12],
+      mrpAfter: tot[13],
       lineItemsDup: dupStats.physDupCount,
       lineItemsUnique: dupStats.physUniqueCount,
       extrasUnique: dupStats.physOnlyUniqueCount
@@ -1949,7 +1949,7 @@ const applyUnmatchedQuantities = useCallback((currentUnmatchedEntries) => {
   const buildSummaryAoA = (s, title, reportData) => {
     if (!s) return null;
     const tot = reportData?.[1] || [];
-    const mrpAfter = Number(tot[12] || 0);
+    const mrpAfter = Number(tot[13] || 0);
 
     const rows = [
       [title || 'Summary', '', '', ''], // Main title row
@@ -3065,8 +3065,8 @@ const applyUnmatchedQuantities = useCallback((currentUnmatchedEntries) => {
                             TVS Template Total: <strong>{formatNumber(tvsStockTotal)}</strong>
                           </Typography>
                           <Chip 
-                            label={Math.abs(reportData[1][4] - tvsStockTotal) <= 0.01 ? "Totals Match" : "Totals Don't Match"} 
-                            color={Math.abs(reportData[1][4] - tvsStockTotal) <= 0.01 ? "success" : "error"} 
+                            label={Math.abs(reportData[1][5] - tvsStockTotal) <= 0.01 ? "Totals Match" : "Totals Don't Match"} 
+                            color={Math.abs(reportData[1][5] - tvsStockTotal) <= 0.01 ? "success" : "error"} 
                             size="small"
                           />
                         </Box>
