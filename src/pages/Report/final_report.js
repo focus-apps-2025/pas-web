@@ -1926,8 +1926,8 @@ const applyUnmatchedQuantities = useCallback((currentUnmatchedEntries) => {
     const summary = {
       partBeforeDup: dupStats.dmsDupCount,
       partAfterDup: dupStats.dmsDupCount + dupStats.physOnlyUniqueCount,
-      shortageCount: reportData.slice(2).filter(r => r[5] > 0).length,
-      excessCount: reportData.slice(2).filter(r => r[6] > 0).length,
+      shortageCount: reportData.slice(2).filter(r => r[6] > 0).length,
+      excessCount: reportData.slice(2).filter(r => r[7] > 0).length,
       shortageValue: tot[10],
       excessValue: tot[11],
       ndpBefore: tot[14],
