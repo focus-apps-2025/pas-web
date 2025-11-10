@@ -1918,28 +1918,28 @@ const applyUnmatchedQuantities = useCallback((currentUnmatchedEntries) => {
     }
   };
 
-  const buildSummary = (reportData, dupStats) => {
-    if (!reportData || !dupStats) return null;
+ const buildSummary = (reportData, dupStats) => {
+  if (!reportData || !dupStats) return null;
 
-    const tot = reportData[1];
+  const tot = reportData[1];
 
-    const summary = {
-      partBeforeDup: dupStats.dmsDupCount,
-      partAfterDup: dupStats.dmsDupCount + dupStats.physOnlyUniqueCount,
-      shortageCount: reportData.slice(2).filter(r => r[5] > 0).length,
-      excessCount: reportData.slice(2).filter(r => r[6] > 0).length,
-      shortageValue: tot[9],
-      excessValue: tot[10],
-      ndpBefore: tot[13],
-      ndpAfter: tot[11],
-      mrpAfter: tot[12],
-      lineItemsDup: dupStats.physDupCount,
-      lineItemsUnique: dupStats.physUniqueCount,
-      extrasUnique: dupStats.physOnlyUniqueCount
-    };
-
-    return summary;
+  const summary = {
+    partBeforeDup: dupStats.dmsDupCount,
+    partAfterDup: dupStats.dmsDupCount + dupStats.physOnlyUniqueCount,
+    shortageCount: reportData.slice(2).filter(r => r[6] > 0).length, // Changed from 5 to 6
+    excessCount: reportData.slice(2).filter(r => r[7] > 0).length,   // Changed from 6 to 7
+    shortageValue: tot[11],  // Changed from 9 to 11
+    excessValue: tot[12],    // Changed from 10 to 12
+    ndpBefore: tot[15],      // Changed from 13 to 15
+    ndpAfter: tot[13],       // Changed from 11 to 13
+    mrpAfter: tot[14],       // Changed from 12 to 14
+    lineItemsDup: dupStats.physDupCount,
+    lineItemsUnique: dupStats.physUniqueCount,
+    extrasUnique: dupStats.physOnlyUniqueCount
   };
+
+  return summary;
+};
 
   const summary = React.useMemo(
     () => buildSummary(reportData, dupStats),
@@ -1947,23 +1947,22 @@ const applyUnmatchedQuantities = useCallback((currentUnmatchedEntries) => {
   );
 
   const buildSummaryAoA = (s, title, reportData) => {
-    if (!s) return null;
-    const tot = reportData?.[1] || [];
-    const mrpAfter = Number(tot[12] || 0);
+  if (!s) return null;
+  const tot = reportData?.[1] || [];
+  const mrpAfter = Number(tot[14] || 0); // Changed from 12 to 14
 
-    const rows = [
-      [title || 'Summary', '', '', ''], // Main title row
-      [], // Empty row for spacing
-      ['Count of Part No. before audit', s.partBeforeDup, 'Count of Part No. after audit', s.partAfterDup],
-      ['Count of Shortage Parts', s.shortageCount, 'Value of Shortage Parts', Number(s.shortageValue || 0)],
-      ['Count of Excess Parts', s.excessCount, 'Value of Excess Parts', Number(s.excessValue || 0)],
-      ['Total NDP Value before audit', Number(s.ndpBefore || 0),
-'Total NDP Value after audit', Number(s.ndpAfter || 0)],
-      ['No of Line item counted', s.lineItemsDup, 'Count of Extras found during audit', s.extrasUnique],
-      ['No of Line item counted - Unique', s.lineItemsUnique, 'Total MRP Value after audit', mrpAfter]
-    ];
-    return rows;
-  };
+  const rows = [
+    [title || 'Summary', '', '', ''], // Main title row
+    [], // Empty row for spacing
+    ['Count of Part No. before audit', s.partBeforeDup, 'Count of Part No. after audit', s.partAfterDup],
+    ['Count of Shortage Parts', s.shortageCount, 'Value of Shortage Parts', Number(s.shortageValue || 0)],
+    ['Count of Excess Parts', s.excessCount, 'Value of Excess Parts', Number(s.excessValue || 0)],
+    ['Total NDP Value before audit', Number(s.ndpBefore || 0), 'Total NDP Value after audit', Number(s.ndpAfter || 0)],
+    ['No of Line item counted', s.lineItemsDup, 'Count of Extras found during audit', s.extrasUnique],
+    ['No of Line item counted - Unique', s.lineItemsUnique, 'Total MRP Value after audit', mrpAfter]
+  ];
+  return rows;
+};
 
   const downloadSummaryExcel = () => {
     if (!summary) {
@@ -3059,14 +3058,14 @@ const applyUnmatchedQuantities = useCallback((currentUnmatchedEntries) => {
                         </Typography>
                         <Box sx={{ display: 'flex', gap: 4, mt: 1 }}>
                           <Typography variant="body2">
-                            Report Physical Total: <strong>{formatNumber(reportData[1][4])}</strong>
+                            Report Physical Total: <strong>{formatNumber(reportData[1][5])}</strong>
                           </Typography>
                           <Typography variant="body2">
                             TVS Template Total: <strong>{formatNumber(tvsStockTotal)}</strong>
                           </Typography>
                           <Chip 
-                            label={Math.abs(reportData[1][4] - tvsStockTotal) <= 0.01 ? "Totals Match" : "Totals Don't Match"} 
-                            color={Math.abs(reportData[1][4] - tvsStockTotal) <= 0.01 ? "success" : "error"} 
+                            label={Math.abs(reportData[1][5] - tvsStockTotal) <= 0.01 ? "Totals Match" : "Totals Don't Match"} 
+                            color={Math.abs(reportData[1][5] - tvsStockTotal) <= 0.01 ? "success" : "error"} 
                             size="small"
                           />
                         </Box>
